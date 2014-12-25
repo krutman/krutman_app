@@ -6,6 +6,9 @@ gem 'rails', '4.0.2'
 gem 'bootstrap-sass', '3.3.1'
 gem 'autoprefixer-rails'
 gem 'bcrypt-ruby', '3.1.2'
+gem 'faker', '1.1.2'
+gem 'will_paginate', '3.0.7'
+gem 'bootstrap-will_paginate', '0.0.10'
 
 group :development, :test do
   gem 'sqlite3', '1.3.8'
