@@ -14,11 +14,16 @@ describe "Authentication" do
   describe "signin" do
     before { visit signin_path }
     
+    it { should_not have_link('Users') }
+    it { should_not have_link('Profile') }
+    it { should_not have_link('Settings') }
+    it { should_not have_link('Sign out', href: signout_path) }
+    
     describe "with invalid information" do
       before { click_button "Sign in" }
 
-        it { should have_title('Sign in') }
-        it { should have_selector('div.alert.alert-danger') }
+      it { should have_title('Sign in') }
+      it { should have_selector('div.alert.alert-danger') }
         
         describe "after visiting another page" do
           before { click_link "Home" }
@@ -43,7 +48,23 @@ describe "Authentication" do
       end
     end
   end
+  
   describe "authorization" do
+    
+    describe "as signed user" do
+      let(:user) { FactoryGirl.create(:user) }
+      before { sign_in user, no_capybara:true } #!!при использовании HTTP-запросов напрямую, необходим флаг no_capybara:true
+      
+      describe "cannot access #new action" do
+        before { get new_user_path }
+        specify { expect(response).to redirect_to(root_url) }
+      end
+      
+      describe "cannot access #create action" do
+        before { post users_path(user) }
+        specify { expect(response).to redirect_to(root_url) }
+      end
+    end
 
     describe "for non-signed-in users" do
       let(:user) { FactoryGirl.create(:user) }
@@ -60,6 +81,17 @@ describe "Authentication" do
 
           it "should render the desired protected page" do #проверка переадресации
               expect(page).to have_title('Edit user')
+          end
+          
+          describe "when signing in again" do
+            before do
+              click_link "Sign out"
+              sign_in user
+            end
+            
+            it "should render the default (profile) page" do
+              expect(page).to have_title(user.name)
+            end
           end
         end
       end
@@ -81,11 +113,24 @@ describe "Authentication" do
           it { should have_title('Sign in') }
         end
       end
+      
+      describe "in the Microposts controller" do
+        #требование входа для действий create и destroy
+        describe "submitting to the create action" do
+          before { post microposts_path }
+          specify { expect(response).to redirect_to(signin_path) }
+        end
+
+        describe "submitting to the destroy action" do
+          before { delete micropost_path(FactoryGirl.create(:micropost)) }
+          specify { expect(response).to redirect_to(signin_path) }
+        end
+      end
     end
     
     describe "as wrong user" do #имеют ли действия edit и update правильного пользователя
       let(:user) { FactoryGirl.create(:user) }
-      let(:wrong_user) { FactoryGirl.create(:user, email: "wrong@example.com") }
+      let(:wrong_user) { FactoryGirl.create(:user, email: "wrong@example.com") } #создание пользователя с адресом, отличающегося от дефолтного
       before { sign_in user, no_capybara: true }
 
       describe "submitting a GET request to the Users#edit action" do
@@ -109,6 +154,18 @@ describe "Authentication" do
       describe "submitting a DELETE request to the Users#destroy action" do
         before { delete user_path(user) } #непосредственная выдача DELETE к указанному URL
         specify { expect(response).to redirect_to(root_url) } #перенаправление в root при запросе delete
+      end
+    end
+    
+    describe "as admin user" do #админ не может направить запрос DELETE и удалить сам себя
+      let(:admin) { FactoryGirl.create(:admin) }
+      
+      before {sign_in admin, no_capybara: true }
+      
+      describe "should not be able to delete themselves via #destroy action" do
+        specify do
+          expect { delete user_path(admin) }.not_to change(User, :count).by(-1)
+        end
       end
     end
   end

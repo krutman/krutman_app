@@ -52,10 +52,19 @@ describe "User pages" do
   
   describe "profile page" do
       let(:user) { FactoryGirl.create(:user) }
+      let!(:m1) { FactoryGirl.create(:micropost, user: user, content: "Foo") } #let! чтобы ассоциация с пользователем
+      let!(:m2) { FactoryGirl.create(:micropost, user: user, content: "Bar") } #появилась немедленно
+      
       before { visit user_path(user) }
 
       it { should have_content(user.name) }
       it { should have_title(user.name) }
+      
+      describe "microposts" do #отображения микросообщений на странице пользователя
+        it { should have_content(m1.content) }
+        it { should have_content(m2.content) }
+        it { should have_content(user.microposts.count) } #обращение к БД с запросом подсчитать кол-во микропостов с этим user_id
+      end
   end
   
   describe "signup page" do
@@ -138,6 +147,18 @@ describe "User pages" do
       it { should have_link('Sign out', href: signout_path) }
       specify { expect(user.reload.name).to  eq new_name }
       specify { expect(user.reload.email).to eq new_email }
+    end
+    
+    describe "forbidden attributes" do #проверка, что атрибут admin не может быть отредактирован через веб
+      let(:params) do
+        { user: { admin: true, password: user.password,
+                  password_confirmation: user.password } }
+      end
+      before do
+        sign_in user, no_capybara: true
+        patch user_path(user), params
+      end
+      specify { expect(user.reload).not_to be_admin }
     end
   end
 end

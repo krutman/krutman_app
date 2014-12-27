@@ -9,4 +9,9 @@ FactoryGirl.define do
       admin true
     end
   end
+  
+  factory :micropost do
+    content "Hello world"
+    user #сообщаем FactoryGirl, что микропосты связаны с пользователем
+  end
 end

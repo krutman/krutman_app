@@ -17,6 +17,7 @@ describe User do
   it { should respond_to(:remember_token) }
   it { should respond_to(:authenticate) }
   it { should respond_to(:admin) }
+  it { should respond_to(:microposts) } #реализация ассоциации
   
   it { should be_valid }
   it { should_not be_admin }
@@ -123,5 +124,41 @@ describe User do
   describe "remember token" do
       before { @user.save }
       its(:remember_token) { should_not be_blank }
+  end
+  
+  describe "micropost associations" do
+
+    before { @user.save }
+    let!(:older_micropost) do #let! потому что требуется немедленное появление переменной
+      FactoryGirl.create(:micropost, user: @user, created_at: 1.day.ago)
+    end
+    let!(:newer_micropost) do
+      FactoryGirl.create(:micropost, user: @user, created_at: 1.hour.ago)
+    end
+
+    #тестирование порядка вывода микросообщений. преобразование в массив и сравнение с нужным порядком - по времени
+    it "should have the right microposts in the right order" do
+      expect(@user.microposts.to_a).to eq [newer_micropost, older_micropost]
+    end
+    
+    #удаление микросообщений удаленного пользователя
+    it "should destroy associated microposts" do
+      microposts = @user.microposts.to_a
+      @user.destroy
+      expect(microposts).not_to be_empty #массив microposts не должен быть пустым, потому что без to_a удаление пользователя будет удалять сообщения в переменной microposts
+      microposts.each do |micropost|
+        expect(Micropost.where(id: micropost.id)).to be_empty #Micropost.where возвращает пустой объект если запись не найдена
+      end
+    end
+    
+    describe "status" do #поток сообщений включает посты пользователя, но исключает посты других пользователей
+      let(:unfollowed_post) do
+        FactoryGirl.create(:micropost, user: FactoryGirl.create(:user))
+      end
+
+      its(:feed) { should include(newer_micropost) } #include проверяет, что массив включает данный элемент
+      its(:feed) { should include(older_micropost) }
+      its(:feed) { should_not include(unfollowed_post) }
+    end
   end
 end

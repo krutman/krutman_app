@@ -1,4 +1,5 @@
 class User < ActiveRecord::Base
+  has_many :microposts, dependent: :destroy #реализация ассоциации. опция destroy сообщает, что при удалении user его сообщения должны быть уничтожены
   before_save { email.downcase! }
   before_create :create_remember_token
   validates :name,  presence: true, length: { maximum: 50 }
@@ -17,6 +18,10 @@ class User < ActiveRecord::Base
   def User.encrypt(token)
     Digest::SHA1.hexdigest(token.to_s)
   end
+  
+  def feed #поток сообщений, предварительное решение
+    Micropost.where("user_id = ?", id) #знак "?" гарантирует, что id корректно маскирован прежде чем быть включенным в лежащий в его основе SQL запрос
+  end #на данный момент Micropost.where("user_id = ?", id) эквивалетно коду microposts
 
   private
 

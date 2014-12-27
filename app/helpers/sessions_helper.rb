@@ -1,4 +1,4 @@
-module SessionsHelper
+module SessionsHelper #необходимо сделать include в application_controller.rb для доступа в контроллерах
 
   def sign_in(user)
     remember_token = User.new_remember_token
@@ -25,6 +25,14 @@ module SessionsHelper
     user == current_user
   end
   
+  def signed_in_user
+    unless signed_in?
+      store_location #помещает запрашиваемый URL в переменную session[:return_to] для GET-запросов
+      redirect_to signin_url
+      flash[:warning] = "Please sign in."
+    end
+  end
+  
   def sign_out
     current_user.update_attribute(:remember_token, User.encrypt(User.new_remember_token))
     cookies.delete(:remember_token)
@@ -36,7 +44,7 @@ module SessionsHelper
     session.delete(:return_to)
   end
 
-  def store_location
-    session[:return_to] = request.url if request.get?
+  def store_location #session - экземпляр переменной cookies
+    session[:return_to] = request.url if request.get? #создается переменная, если запрос get
   end
 end

@@ -55,5 +55,22 @@ describe "Static pages" do
        expect(page).to have_title(full_title('Sign up'))
        click_link "krutman app"
        expect(page).to have_title(full_title(''))
-  end   
+  end  
+  
+   describe "for signed-in users" do
+     let(:user) { FactoryGirl.create(:user) }
+     before do
+       FactoryGirl.create(:micropost, user: user, content: "Lorem ipsum")
+       FactoryGirl.create(:micropost, user: user, content: "Dolor sit amet")
+       sign_in user
+       visit root_path
+     end
+
+     #тестирование отображения потока сообщений
+     it "should render the user's feed" do
+       user.feed.each do |item| #метод из модели User.rb
+         expect(page).to have_selector("li##{item.id}", text: item.content) #уникальный CSS id. Первый диез - Capybara для CSS id, второй - интерполяция строк
+       end
+     end
+   end
 end
