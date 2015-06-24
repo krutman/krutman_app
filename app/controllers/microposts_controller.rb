@@ -21,7 +21,7 @@ class MicropostsController < ApplicationController
   private
 
     def micropost_params #строгие параеметры - для редактирования через веб только контента микросообщения
-      params.require(:micropost).permit(:content)
+      params.require(:micropost).permit(:content, :picture)
     end
     
     def correct_user #выполненеи поиска через ассоциацию, а не через модель Micropost более безопасно

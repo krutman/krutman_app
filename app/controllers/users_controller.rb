@@ -1,5 +1,5 @@
 class UsersController < ApplicationController
-  before_action :signed_in_user, only: [:index, :edit, :update] #требование входа для действий - вызов метода signed_in_user
+  before_action :signed_in_user, only: [:index, :edit, :update, :destroy, :following, :followers] #требование входа для действий - вызов метода signed_in_user
   before_action :correct_user,   only: [:edit, :update] #требование правильного пользователя для доступа к методам edit и update
   before_action :admin_user,     only: :destroy #ограничение к действию destroy всем пользователям, кроме админов
   before_action :restrict_registration, only: [:new, :create] #ограничение регистрации для зарегистрированных пользователей
@@ -50,6 +50,20 @@ class UsersController < ApplicationController
     else
       redirect_to users_url 
     end
+  end
+  
+  def following
+    @title = "Following"
+    @user = User.find(params[:id])
+    @users = @user.followed_users.paginate(page: params[:page])
+    render 'show_follow'
+  end
+
+  def followers
+    @title = "Followers"
+    @user = User.find(params[:id])
+    @users = @user.followers.paginate(page: params[:page])
+    render 'show_follow'
   end
   
   private

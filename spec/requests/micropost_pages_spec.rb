@@ -41,5 +41,16 @@ describe "Micropost pages" do
         expect { click_link "delete" }.to change(Micropost, :count).by(-1)
       end
     end
+    
+    describe "as other user cannot delete user posts" do
+      let(:other_user) { FactoryGirl.create(:user) }
+      before do 
+        click_link "Sign out" #click_link работает только в before, expect и т.д.
+        sign_in other_user
+        visit user_path(other_user)
+      end
+    
+      it { should_not have_link('delete') }
+    end
   end
 end

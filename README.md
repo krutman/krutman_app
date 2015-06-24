@@ -1,2 +1,2 @@
-This is my first RoR Application
+Ruby on Rails Tutorial Application
 by [M. Krutman]
